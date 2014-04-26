@@ -106,7 +106,7 @@ Executable matchbox2014
                     , containers
                     , mtl
                     , satchmo-core
-                    , tpdb >= 0.9
+                    , tpdb >= 0.9.1
                     , co4
                     , satchmo-smt > 0.4, satchmo >= 2.8
                     , transformer-combinators, array, hashable, HaXml
