@@ -109,4 +109,4 @@ Executable matchbox2014
                     , tpdb >= 0.9
                     , co4
                     , satchmo-smt > 0.4, satchmo >= 2.8
-                    , transformer-combinators, array, hashable, HaXml
+                    , array, hashable, HaXml
