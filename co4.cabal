@@ -104,7 +104,7 @@ Executable matchbox2014
   Ghc-options:        -W -fno-warn-incomplete-patterns
   Build-Depends:      base
                     , containers
-                    , mtl, transformers
+                    , mtl, transformers, logict
                     , satchmo-core
                     , tpdb >= 0.9.1
                     , co4
