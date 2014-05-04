@@ -11,20 +11,24 @@ import qualified CO4.Example.Simple
 import qualified CO4.Example.LoopSrs
 import qualified CO4.Example.LoopTrsToyama
 import qualified CO4.Example.WCB_Matrix
+import qualified CO4.Example.QueensSelfContained
+import qualified CO4.Example.LPO
 
 main :: IO ()
 main = do 
   getArgs >>= \case
-    ["binary"]     -> binary 143
-    ["binary",n]   -> binary $ read n
-    ["nat"]        -> nat 143
-    ["nat",n]      -> nat $ read n
-    ["prelude"]    -> prelude
-    ["simple"]     -> simple
-    ["loop-srs"]   -> loopSrs
-    ["loop-trs"]   -> loopTrs
-    ["wcb-matrix"] -> wcbMatrix
-    _              -> all
+    ["binary"]      -> binary 143
+    ["binary",n]    -> binary $ read n
+    ["nat"]         -> nat 143
+    ["nat",n]       -> nat $ read n
+    ["prelude"]     -> prelude
+    ["simple"]      -> simple
+    ["loop-srs"]    -> loopSrs
+    ["loop-trs"]    -> loopTrs
+    ["wcb-matrix"]  -> wcbMatrix
+    ["queens-self"] -> queensSelf 8
+    ["lpo"]         -> lpo
+    _               -> all
   exitSuccess
 
   where
@@ -46,7 +50,12 @@ main = do
     wcbMatrix = simpleTest "CO4.Example.WCB_Matrix: ex0" $ CO4.Example.WCB_Matrix.result
                                                          $ CO4.Example.WCB_Matrix.ex0
 
+    queensSelf = simpleTest "CO4.Example.QueensSelfContained" . CO4.Example.QueensSelfContained.result
+
+    lpo = simpleTest "CO4.Example.LPO" $ CO4.Example.LPO.result
+
     all = binary 143 >> nat 143 >> prelude >> simple >> loopSrs >> loopTrs >> wcbMatrix
+                     >> queensSelf 8 >> lpo
 
 simpleTest :: String -> IO (Maybe a) -> IO ()
 simpleTest name action = do
