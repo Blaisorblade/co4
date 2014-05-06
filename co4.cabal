@@ -96,6 +96,7 @@ Executable termcomp2014
                     , mtl
                     , satchmo-core
                     , tpdb
+                    , HaXml
                     , co4
 
 Executable matchbox2014
