@@ -47,7 +47,7 @@ main = do
     (config,filePath) <- parseConfig
     trs <- TPDB.Input.get_trs filePath
     out <- run $ handle_both
-               $ trs { rules = map sortVariables $ rules trs }
+               $ trs -- { rules = map sortVariables $ rules trs }
     case out of
         Nothing    -> do putStrLn "MAYBE"
         Just proof -> do  
@@ -123,8 +123,7 @@ decomp succ fail sys =
 
 matrices  =  capture $ foldr1 orelse
     $ map (\(d,b) -> matrix_arc d b) 
-         [(1,8),(2,7),(3,5),(4,4),(5,3)]
-         -- [(1,8),(2,4),(3,2)]
+    $ do d <- [1 .. ] ; return ( d, 8 )
 
 for_usable_rules method = \ sys -> do
     let restricted = TPDB.DP.Usable.restrict sys
@@ -157,9 +156,10 @@ semanticlabs = capture $ foldr1 orelse
         , useInterpretation = True , usePrecedence = False
         -- , useInterpretation = False , usePrecedence = True
         , numPrecedences = n
+        , numPatterns = succ b
         , beVerbose = True 
         }) 
-        [  (0,1), (1,1) , (1,2), (2,1), (2,2), (3,1), (3,2), (3,3) ]
+      $ do b <- [0 .. ] ; n <- [ 1 .. 2 ^ b ] ; return (b,n)
 
 semanticlab config = mkWork $ \ sys -> do
     out <- run1 config sys
