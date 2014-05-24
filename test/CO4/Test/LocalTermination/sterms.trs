@@ -1,0 +1,4 @@
+(VAR x y z)
+(RULES 
+  ap(ap(ap(S,x),y),z) -> ap(ap(x,z),ap(y,z))
+)
