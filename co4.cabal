@@ -89,9 +89,9 @@ Test-Suite co4-examples
                     , tpdb
                     , co4
 
-Executable termcomp2014
-  hs-source-dirs: tc
-  Main-is:            CO4/Test/TermComp2014/Main.hs
+Executable local-termination
+  hs-source-dirs: test
+  Main-is:            CO4/Test/LocalTermination/Main.hs
   Ghc-options:        -W -fno-warn-incomplete-patterns
   Build-Depends:      base
                     , containers
@@ -100,17 +100,3 @@ Executable termcomp2014
                     , tpdb
                     , HaXml
                     , co4
-
-Executable matchbox2014
-  hs-source-dirs: tc
-  Main-is:            MB.hs
-  Ghc-options:        -W -fno-warn-incomplete-patterns -threaded -rtsopts
-  Build-Depends:      base
-                    , containers
-                    , mtl, transformers, logict
-                    , satchmo-core
-                    , tpdb >= 0.9.5
-                    , co4
-                    , satchmo-smt > 0.4, satchmo >= 2.8
-                    , array, hashable, HaXml, wl-pprint-text
-                    , async, stm
