@@ -222,7 +222,7 @@ usableOK (TaggedGroupedTrs rss) usable = forall rss ( \ rs -> forall rs ( \ (tag
 -- * make labeled TRS & search model
 
 assignements :: [Symbol] -> [Domain] -> Assignments Symbol
-assignements syms values = case syms of
+assignements syms values = case assertKnown syms of
   []   -> [[]]
   s:ss -> concatMap (\as -> concatMap (\v -> [(s,v) : as]) values) 
                     (assignements ss values)
@@ -614,18 +614,18 @@ variables =
     go []
 
 isElem :: (a -> a -> Bool) -> a -> [a] -> Bool
-isElem eq x xs = case xs of
+isElem eq x xs = case assertKnown xs of
   []   -> False
   y:ys -> case eq x y of True  -> True
                          False -> isElem eq x ys
 
 atIndex :: Index -> [a] -> a
-atIndex index xs = case index of
+atIndex index xs = case assertKnown index of
   This      -> head xs
   Next next -> atIndex next (tail xs)
 
 lookup :: (k -> k -> Bool) -> k -> Map k v -> v
-lookup f k map = case map of
+lookup f k map = case assertKnown map of
   []   -> undefined
   m:ms -> case m of 
     (k',v) -> case f k k' of
