@@ -8,6 +8,8 @@ import CO4.PreludeBool (xor2)
 
 type Map k v                   = [(k,v)]
 
+type Set k                     = Map k Bool
+
 data Pattern p                 = Any
                                | Exactly p
                                deriving (Eq,Show)
@@ -105,11 +107,10 @@ data Proof = Proof (Model Symbol) [UsableOrder MSL] deriving Show
 
 type State = Nat
 
-type Automaton symbol state = ([state], Transition symbol state)
+type Automaton symbol state = (Set state, Transition symbol state)
 
 type Transition symbol state = Map symbol (Map [state] state)
 
--- Modell über alle Regeln suchen -> zweites TRS als Eingabe
 constraint :: (DPTrs (), DPTrs (), [Domain], Automaton Symbol State, State) 
            -> Proof
            -> Bool
@@ -469,52 +470,62 @@ lex ord xs ys = case xs of
 transition :: Automaton sym s -> Transition sym s
 transition (_,t) = t
 
-states :: Automaton sym s -> [s]
+states :: Automaton sym s -> Set s
 states (s,_) = s
 
 isSubLanguage :: (Automaton Symbol State, State) -> Automaton Symbol State -> Bool
 isSubLanguage (p, garbage) u =
-  let eq      = eqList (eqPair eqState)
+  let eq      = eqPair eqState
       product = productAutomaton eqSymbol p u
-      r       = reachable eq 
   in
-    forall (states product) (\(p',u') ->
-      (eqState garbage p') || (not (eqState garbage u'))
+    forall (reachable eq product) (\(s,inProduct) ->
+      case inProduct of
+        False -> True
+        True  -> case s of
+          (p',u') -> (eqState garbage p') || (not (eqState garbage u'))
     )
 
-reachable :: (s -> s -> Bool) -> Automaton sym s -> [s]
+reachable :: (s -> s -> Bool) -> Automaton sym s -> Set s
 reachable eqS a =
-  let iStates = initialStates a
+  let iStates                = initialStates eqS a
       goTransition reachable = 
-        let isReachable r = isElem eqS r reachable
+        let isReachable r = isElemSet eqS r reachable
             isNew       r = not (isReachable r)
         
-            new = forM reachable ( \r -> 
-                    forM (transition a) ( \(_,m) ->
-                      forM m ( \(args, image) ->
-                        case (all isReachable args) && (isNew image) of
-                          True  -> [image]
-                          False -> []
-                  )))
+            new = foldl (\new' (_,m) -> 
+                            foldl (\new'' (args,image) ->
+                              case (all isReachable args) && (isNew image) of
+                                True  -> insertElemSet eqS image new''
+                                False -> new''
+                            )
+                            new' m
+                        ) 
+                        (emptySet reachable) (transition a)
         in 
-          case null new of
+          case isEmptySet new of
             True  -> reachable
-            False -> goTransition (reachable ++ new)
+            False -> goTransition (unionSet reachable new)
   in
     goTransition iStates
 
-initialStates :: Automaton sym s -> [s]
-initialStates a = 
-  let goMap (args, image) = case args of
-        [] -> [image]
-        _  -> []
+initialStates :: (s -> s -> Bool) -> Automaton sym s -> Set s
+initialStates eqS a = 
+  let isInitial s = any (\(_,t) -> isTriviallyReachable s t) (transition a)
+
+      isTriviallyReachable s t = case head t of
+        (args, image) -> case args of
+                           [] -> eqS s image
+                           _  -> False
   in
-    forM (transition a) ( \(_, m) -> forM m goMap )
+    for (states a) $ \(s, inA) ->
+      case inA of
+        False -> (s, False)
+        True  -> (s, isInitial s)
 
 productAutomaton :: (sym -> sym -> Bool) -> Automaton sym s -> Automaton sym s 
                  -> Automaton sym (s,s)
 productAutomaton eqSym (qA, tA) (qB, tB) = 
-  ( product qA qB, productTransitions eqSym tA tB)
+  ( productSet qA qB, productTransitions eqSym tA tB)
   
 productTransitions :: (sym -> sym -> Bool) -> Transition sym s -> Transition sym s 
                    -> Transition sym (s,s)
@@ -527,22 +538,28 @@ productTransitions eqSym a b =
       goMapping mA mB = 
         let go (a', b') = (zip (fst a') (fst b'), (snd a', snd b'))
         in
-          map go (product mA mB)
+          map go (productList mA mB)
   in
     map goTransition a
 
-product :: [s] -> [s] -> [(s,s)]
-product a b = concatMap (\a' -> concatMap (\b' -> [(a',b')] ) b ) a
+productList :: [s] -> [s] -> [(s,s)]
+productList a b = concatMap (\a' -> concatMap (\b' -> [(a',b')] ) b ) a
+
+productSet :: Set s -> Set s -> Set (s,s)
+productSet a b = 
+  forM a (\(sA,inA) ->
+    forM b (\(sB,inB) -> [((sA,sB), inA && inB)]))
 
 automatonFromModel :: [Domain] -> Model sym -> Automaton sym State
 automatonFromModel modelDomain model = 
-  let goInterpretation (s, m) = (s, map goMap m)
+  let states                  = map (\d -> (d,True)) modelDomain
+      goInterpretation (s, m) = (s, map goMap m)
       goMap (args, image)     = (map goArg args, image)
       goArg arg               = case arg of
         Exactly a -> a
         Any       -> undefined
   in
-    (modelDomain, map goInterpretation model)
+    (states, map goInterpretation model)
 
 modelFromAutomaton :: Automaton sym State -> Model sym
 modelFromAutomaton (_,transition) = 
@@ -561,6 +578,27 @@ isLhsInLanguage model garbage rule = case rule of
 filterGarbage :: Model Symbol -> State -> GroupedDPTrs Label -> GroupedDPTrs Label
 filterGarbage model garbage (GroupedTrs labeledTrs) = 
   GroupedTrs ( map (\rs -> filter (isLhsInLanguage model garbage) rs) labeledTrs )
+
+-- * sets
+
+isEmptySet :: Set k -> Bool
+isEmptySet set = all (\(_,v) -> not v) set
+
+emptySet :: Set k -> Set k
+emptySet set = map (\(k,_) -> (k,False)) set
+
+isElemSet :: (k -> k -> Bool) -> k -> Set k -> Bool
+isElemSet eqK k set = lookup eqK k set
+
+insertElemSet :: (k -> k -> Bool) -> k -> Set k -> Set k
+insertElemSet eqK k set = for set (\(k',v) ->
+    case eqK k k' of
+      False -> (k',v)
+      True  -> (k',True)
+  )
+
+unionSet :: Set k -> Set k -> Set k
+unionSet a b = zipWith (\(k1,v1) (_,v2) -> (k1, v1 || v2)) a b
 
 -- * utilities
 
