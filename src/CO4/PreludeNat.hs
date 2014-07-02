@@ -37,7 +37,7 @@ import           Data.Function (on)
 import qualified Data.Map.Strict as M
 import           Satchmo.Core.Decode (Decode,decode)
 import           Satchmo.Core.Primitive 
-  (primitive,constant,assert,not,and,xor,or,equals)
+  (primitiveFrom,constant,assert,not,and,xor,or,equals)
 import           CO4.Monad (CO4,SAT,traced,abortWithStackTrace)
 import           CO4.EncodedAdt 
 import           CO4.Encodeable (Encodeable (..))
@@ -236,7 +236,8 @@ encComparePrimitives_linear a b = case (a,b) of
   ([],[]) -> return ( constant False, constant True )
   ((x:xs),(y:ys)) -> do
     ( ll, ee ) <- encComparePrimitives xs ys
-    l <- primitive ; e <- primitive
+    l <- primitiveFrom [ll,x,y]
+    e <- primitiveFrom [ee,x,y]
 
     --   l <-> ( ll || (ee && (x < y)) )
     implies [ ll ] [ l ]
@@ -396,7 +397,7 @@ encTimesNatProf a b = traced "timesNat" $ encTimesNat a b
 
 ifthenelse :: Primitive -> Primitive -> Primitive -> CO4 Primitive
 ifthenelse i t e = do
-    r <- primitive
+    r <- primitiveFrom [i,t,e]
     assert [ not i , not t, r ]
     assert [ not i , not r, t ]
     assert [     i , not e, r ]
@@ -416,7 +417,7 @@ fullAdder_one p1 p2 p3 = do
 
 fullAdder_three x y z = do
     r <- xor [x,y,z]
-    c <- primitive
+    c <- primitiveFrom [x,y,z]
     implies [ x, y ] [ c ]
     implies [ y, z ] [ c ]
     implies [ z, x ] [ c ] 

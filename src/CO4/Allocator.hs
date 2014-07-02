@@ -42,7 +42,7 @@ encodeOverlapping allocs = do
     [Known 0 1 _]     -> return []
     [Known i n _]     -> return $ map constant $ invNumeric n i
     [BuiltInKnown fs] -> return $ map constant fs
-    _                 -> sequence $ replicate maxFlags primitive
+    _                 -> sequence $ replicate maxFlags $ primitive 0
 
   make (constant True) flags args prefixfree
 

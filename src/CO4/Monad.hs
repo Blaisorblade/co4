@@ -89,9 +89,9 @@ abortWithStackTrace msg = do
       ++ trace
 
 instance MonadSAT CO4 where
-  fresh = do
+  fresh depth = do
     modify $! onProfile $! onCurrentInner incNumVariables
-    liftSAT fresh 
+    liftSAT $! fresh depth
 
   emit c = do
     modify $! onProfile $! onCurrentInner incNumClauses

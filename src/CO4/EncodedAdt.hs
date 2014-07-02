@@ -19,7 +19,7 @@ import           Data.Function (on)
 import           Data.List (transpose,genericIndex,genericLength,maximumBy)
 import           Data.Maybe (fromMaybe,catMaybes,fromJust)
 import           Data.Tree (Tree (..),drawTree)
-import           Satchmo.Core.Primitive (constant,select,primitive,assert,and)
+import           Satchmo.Core.Primitive (constant,select,assert,and)
 import qualified Satchmo.Core.Primitive as P
 import           Satchmo.Core.Boolean (Boolean)
 import           Satchmo.Core.Decode (Decode,decode)
@@ -289,7 +289,7 @@ caseOfBits prefixfree flags branchBits =
       mergeN bitsT = case equalBits bitsT of
         True  -> return $ head bitsT 
         False -> do
-           r <- primitive
+           r <- P.primitiveFrom bitsT
            forM (zip bitsT [0..]) $ \ (b, i) -> do
                 let pattern = invNumeric numCons i
                     fs      = zipWith select pattern flags
